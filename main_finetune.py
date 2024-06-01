@@ -27,12 +27,15 @@ assert timm.__version__ == "0.3.2" # version check
 from timm.models.layers import trunc_normal_
 from timm.data.mixup import Mixup
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
+import torchvision.datasets as datasets
+import torchvision.transforms as transforms
 
 import util.lr_decay as lrd
 import util.misc as misc
 from util.datasets import build_dataset
 from util.pos_embed import interpolate_pos_embed
 from util.misc import NativeScalerWithGradNormCount as NativeScaler
+from util.crop import RandomResizedCrop
 
 import models_vit
 
@@ -154,7 +157,7 @@ def get_args_parser():
 
     return parser
 
-
+# change dataset
 def main(args):
     misc.init_distributed_mode(args)
 
@@ -169,9 +172,24 @@ def main(args):
     np.random.seed(seed)
 
     cudnn.benchmark = True
+    #fixme: change transforms
+    
+    cifar10_mean = [0.4914,0.4822,0.4465]
+    cifar10_std = [0.2023,0.1994,0.2010]
+    transform_train = transforms.Compose([
+            RandomResizedCrop(32, interpolation=3),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=cifar10_mean, std=cifar10_std)])
+    transform_val = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=cifar10_mean, std=cifar10_std)])
+    dataset_train = datasets.CIFAR10(root=args.data_path, train=True, transform=transform_train, download=False)
+    dataset_val = datasets.CIFAR10(root=args.data_path, train=False, transform=transform_val, download=False)   
 
-    dataset_train = build_dataset(is_train=True, args=args)
-    dataset_val = build_dataset(is_train=False, args=args)
+    
+    # dataset_train = build_dataset(is_train=True, args=args)
+    # dataset_val = build_dataset(is_train=False, args=args)
 
     if True:  # args.distributed:
         num_tasks = misc.get_world_size()

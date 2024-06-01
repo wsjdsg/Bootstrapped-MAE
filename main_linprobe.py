@@ -38,7 +38,7 @@ import models_vit
 
 from engine_finetune import train_one_epoch, evaluate
 
-
+#change dataset
 def get_args_parser():
     parser = argparse.ArgumentParser('MAE linear probing for image classification', add_help=False)
     parser.add_argument('--batch_size', default=512, type=int,
@@ -128,19 +128,24 @@ def main(args):
 
     cudnn.benchmark = True
 
+    cifar10_mean = [0.4914,0.4822,0.4465]
+    cifar10_std = [0.2023,0.1994,0.2010]
     # linear probe: weak augmentation
+    
+    #fixme: change transforms
     transform_train = transforms.Compose([
-            RandomResizedCrop(224, interpolation=3),
+            RandomResizedCrop(32, interpolation=3),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+            transforms.Normalize(mean=cifar10_mean, std=cifar10_std)])
     transform_val = transforms.Compose([
-            transforms.Resize(256, interpolation=3),
-            transforms.CenterCrop(224),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-    dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
-    dataset_val = datasets.ImageFolder(os.path.join(args.data_path, 'val'), transform=transform_val)
+            transforms.Normalize(mean=cifar10_mean, std=cifar10_std)])
+    dataset_train = datasets.CIFAR10(root=args.data_path, train=True, transform=transform_train, download=False)
+    dataset_val = datasets.CIFAR10(root=args.data_path, train=False, transform=transform_val, download=False)   
+    # dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
+    # dataset_val = datasets.ImageFolder(os.path.join(args.data_path, 'val'), transform=transform_val)
+    
     print(dataset_train)
     print(dataset_val)
 

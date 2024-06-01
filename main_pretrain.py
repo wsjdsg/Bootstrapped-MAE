@@ -103,7 +103,8 @@ def get_args_parser():
 
     return parser
 
-
+# 1.change model from ViT to DeiT
+# 2.fix dataset parameter(mean, std, etc.)
 def main(args):
     misc.init_distributed_mode(args)
 
@@ -118,14 +119,19 @@ def main(args):
     np.random.seed(seed)
 
     cudnn.benchmark = True
+    
+    #cifar_10 mean and std
+    cifar10_mean = [0.4914,0.4822,0.4465]
+    cifar10_std = [0.2023,0.1994,0.2010]
 
     # simple augmentation
     transform_train = transforms.Compose([
             transforms.RandomResizedCrop(args.input_size, scale=(0.2, 1.0), interpolation=3),  # 3 is bicubic
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-    dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
+            transforms.Normalize(mean=cifar10_mean, std=cifar10_std)])
+    dataset_train = datasets.CIFAR10(root=args.data_path, train=True, transform=transform_train, download=False)
+    # dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
     print(dataset_train)
 
     if True:  # args.distributed:

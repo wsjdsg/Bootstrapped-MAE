@@ -147,6 +147,7 @@ class MaskedAutoencoderViT(nn.Module):
 
         return x_masked, mask, ids_restore
 
+    #ViT只在一开始加了位置编码
     def forward_encoder(self, x, mask_ratio):
         # embed patches
         x = self.patch_embed(x)
@@ -241,6 +242,14 @@ def mae_vit_huge_patch14_dec512d8b(**kwargs):
         patch_size=14, embed_dim=1280, depth=32, num_heads=16,
         decoder_embed_dim=512, decoder_depth=8, decoder_num_heads=16,
         mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+    return model
+
+#fixme: I change decoder to a smaller one
+def deit_tiny(**kwargs):
+    model = MaskedAutoencoderViT(
+        img_size=32,patch_size=4, embed_dim=192, depth=12, num_heads=3,
+        decoder_embed_dim=192, decoder_depth=8, decoder_num_heads=8,
+        mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-12), **kwargs)
     return model
 
 
