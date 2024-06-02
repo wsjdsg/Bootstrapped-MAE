@@ -1,5 +1,5 @@
 #note comment out "--enable_ema   --ema_alpha    --ema_warmup_epochs" to disable ema 
-CUDA_VISIBLE_DEVICES=3 python 'main_pretrain.py' \
+CUDA_VISIBLE_DEVICES=2 python 'main_pretrain.py' \
     --batch_size 256 \
     --model deit_tiny \
     --norm_pix_loss \
@@ -8,10 +8,11 @@ CUDA_VISIBLE_DEVICES=3 python 'main_pretrain.py' \
     --epochs 200 \
     --blr 5e-4 --weight_decay 0.05 \
     --data_path './data' \
-    --output_dir "./output_dir/bmae" \
-    --log_dir "./output_dir/bmae" \
+    --output_dir "./output_dir/bmae_K$1" \
+    --log_dir "./output_dir/bmae_K$1" \
     --enable_bootstrap \
-    --bmae_k 4 \
+    --bmae_k $1 \
     --enable_ema \
     --ema_alpha=0.99 \
-    --ema_warmup_epochs=1
+    --ema_warmup_epochs=$1
+
