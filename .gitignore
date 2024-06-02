@@ -3,3 +3,4 @@
 /__pycache__/
 /output_dir/
 *.log
+nohup.out

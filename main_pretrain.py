@@ -31,7 +31,7 @@ import util.misc as misc
 from util.misc import NativeScalerWithGradNormCount as NativeScaler
 
 import models_mae
-
+import models_bmae
 from engine_pretrain import train_one_epoch
 
 
@@ -55,6 +55,18 @@ def get_args_parser():
 
     parser.add_argument('--norm_pix_loss', action='store_true',
                         help='Use (per-patch) normalized pixels as targets for computing loss')
+    parser.add_argument('--bmae_k', default=1, type=int,
+                        help='mae_k, 1 for simple mae')
+    parser.add_argument('--ema_alpha', default=0.99, type=float,
+                        help='ema parameter')
+    parser.add_argument('--enable_ema', action='store_true',default=False,
+                        help='enable ema in bootstrapped MAE')
+    parser.add_argument('--enable_bootstrap', action='store_true',default=False,
+                        help='enable bootstrapped MAE')
+    parser.add_argument('--ema_warmup_epochs', default=0, type=int,
+                        help='warm up before bootstrapped MAE with ema')   
+     
+     
     parser.set_defaults(norm_pix_loss=False)
 
     # Optimizer parameters
@@ -70,7 +82,7 @@ def get_args_parser():
 
     parser.add_argument('--warmup_epochs', type=int, default=40, metavar='N',
                         help='epochs to warmup LR')
-
+    
     # Dataset parameters
     parser.add_argument('--data_path', default='/datasets01/imagenet_full_size/061417/', type=str,
                         help='dataset path')
@@ -159,8 +171,15 @@ def main(args):
     )
     
     # define the model
-    model = models_mae.__dict__[args.model](norm_pix_loss=args.norm_pix_loss)
-
+    if args.enable_bootstrap:
+        model = models_bmae.__dict__[args.model](norm_pix_loss=args.norm_pix_loss,enable_ema = args.enable_ema, 
+                                                    ema_warmup_epochs=args.ema_warmup_epochs,ema_alpha=args.ema_alpha)
+        print('use bootstrapped MAE!')
+        if args.enable_ema:
+            print('ema enabled!')
+    else:
+        model = models_mae.__dict__[args.model](norm_pix_loss=args.norm_pix_loss)
+        print('simple MAE')
     model.to(device)
 
     model_without_ddp = model
@@ -194,6 +213,9 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             data_loader_train.sampler.set_epoch(epoch)
+        if args.enable_bootstrap and not args.enable_ema and (epoch +1)% (args.epochs//args.bmae_k) == 0:
+            print('shadow updated!')
+            model.update_shadow()
         train_stats = train_one_epoch(
             model, data_loader_train,
             optimizer, device, epoch, loss_scaler,
@@ -213,6 +235,8 @@ def main(args):
                 log_writer.flush()
             with open(os.path.join(args.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
                 f.write(json.dumps(log_stats) + "\n")
+        if args.enable_ema:
+            model.update_epoch()
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))

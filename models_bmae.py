@@ -39,26 +39,32 @@ class BootstrappedMaskedAutoencoderViT(MaskedAutoencoderViT):
             self.ema_alpha = kwargs['ema_alpha']
             self.now_epoch = 0
         
-    #TODO
+    
     def ema_register(self):
-        # for convenience, I register all the weights including encoder and decoder
-        for name, param in self.named_parameters():
-            if param.requires_grad:
-                self.shadow[name] = param.data.clone()
+        self.shadow['patch_embed'] = copy.deepcopy(self.patch_embed).cuda()
+        self.shadow['cls_token'] = copy.deepcopy(self.cls_token).cuda()
+        self.shadow['pos_embed'] = copy.deepcopy(self.pos_embed).cuda()
+        self.shadow['blocks'] = copy.deepcopy(self.blocks).cuda()
+        self.shadow['norm'] = copy.deepcopy(self.norm).cuda()       
 
+    def ema_update_module(self,shadow_module,new_module):
+        if isinstance(shadow_module,nn.Module):
+            assert isinstance(new_module,nn.Module)
+            for shadow_param,new_param in zip(shadow_module.parameters(),new_module.parameters()):
+                new_average = (1.0 - self.ema_alpha) * new_param.data + self.ema_alpha * shadow_param.data
+                shadow_param.data.copy_(new_average)
+        else:
+            assert isinstance(shadow_module,torch.Tensor)
+            assert isinstance(new_module,torch.Tensor)
+            new_average = (1.0 - self.ema_alpha) * new_module.data + self.ema_alpha * shadow_module.data
+            shadow_module.copy_(new_average)
+        
     def ema_update(self):
-        for name, param in self.named_parameters():
-            if param.requires_grad:
-                assert name in self.shadow
-                new_average = (1.0 - self.ema_alpha) * param.data + self.ema_alpha * self.shadow[name]
-                self.shadow[name] = new_average.clone()
-
-
-    def forward(self, imgs, mask_ratio=0.75):
-        latent, mask, ids_restore = self.forward_encoder(imgs, mask_ratio)
-        pred = self.forward_decoder(latent, ids_restore)  # [N, L, p*p*3]
-        loss = self.forward_loss(imgs, pred, mask)
-        return loss, pred, mask
+        self.ema_update_module(self.shadow['patch_embed'],self.patch_embed)   
+        self.ema_update_module(self.shadow['cls_token'],self.cls_token)
+        self.ema_update_module(self.shadow['pos_embed'],self.pos_embed)
+        self.ema_update_module(self.shadow['blocks'],self.blocks)
+        self.ema_update_module(self.shadow['norm'],self.norm)
     
     def bmae_decoder_forward(self,x,ids_restore):
         x = self.decoder_embed(x)
@@ -88,7 +94,7 @@ class BootstrappedMaskedAutoencoderViT(MaskedAutoencoderViT):
 
         return x
     
-    #TODO normalized
+    
     def bmae_encoder_forward_loss(self, target, pred, mask):
         """
         target: [N, L, embed_dim]
@@ -106,7 +112,9 @@ class BootstrappedMaskedAutoencoderViT(MaskedAutoencoderViT):
         loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
         return loss
 
-
+    def update_epoch(self):
+        self.now_epoch+=1
+        
     def forward(self,imgs,mask_ratio=0.75):
         if self.enable_ema:
             self.ema_update()
@@ -116,22 +124,22 @@ class BootstrappedMaskedAutoencoderViT(MaskedAutoencoderViT):
             latent, mask, ids_restore = self.forward_encoder(imgs, mask_ratio)
             pred = self.bmae_decoder_forward(latent,ids_restore)
             shadow_encoder_out = self.bmae_shadow_encoder_forward(imgs)
-            loss = self.bmae_encoder_forward_loss(shadow_encoder_out,pred,mask)
+            loss = self.bmae_encoder_forward_loss(shadow_encoder_out[:,1:,:],pred,mask)
+            print('use bmae loss')
             return loss, pred, mask
         else:
             return super(BootstrappedMaskedAutoencoderViT,self).forward(imgs,mask_ratio)
 
     def update_shadow(self): #BMAE_K
-        self.shadow['patch_embed'] = copy.deepcopy(self.patch_embed)
-        self.shadow['cls_token'] = copy.deepcopy(self.cls_token)
-        self.shadow['pos_embed'] = copy.deepcopy(self.pos_embed)
-        self.shadow['blocks'] = copy.deepcopy(self.blocks)
-        self.shadow['norm'] = copy.deepcopy(self.norm)
+        self.shadow['patch_embed'] = copy.deepcopy(self.patch_embed).cuda()
+        self.shadow['cls_token'] = copy.deepcopy(self.cls_token).cuda()
+        self.shadow['pos_embed'] = copy.deepcopy(self.pos_embed).cuda()
+        self.shadow['blocks'] = copy.deepcopy(self.blocks).cuda()
+        self.shadow['norm'] = copy.deepcopy(self.norm).cuda()
  
-#fixme: I change decoder to a smaller one
-#"the decoder can be narrower and shallower"
+
 def deit_tiny(**kwargs):
-    model = MaskedAutoencoderViT(
+    model = BootstrappedMaskedAutoencoderViT(
         img_size=32,patch_size=4, embed_dim=192, depth=12, num_heads=3,
         decoder_embed_dim=192, decoder_depth=8, decoder_num_heads=8,
         mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-12), **kwargs)
