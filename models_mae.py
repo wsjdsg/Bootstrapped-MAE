@@ -150,8 +150,7 @@ class MaskedAutoencoderViT(nn.Module):
     #ViT只在一开始加了位置编码
     def forward_encoder(self, x, mask_ratio):
         # embed patches
-        x = self.patch_embed(x)
-
+        x = self.patch_embed(x) #[B,L,p*p*3]
         # add pos embed w/o cls token
         x = x + self.pos_embed[:, 1:, :]
 
@@ -167,7 +166,6 @@ class MaskedAutoencoderViT(nn.Module):
         for blk in self.blocks:
             x = blk(x)
         x = self.norm(x)
-
         return x, mask, ids_restore
 
     def forward_decoder(self, x, ids_restore):
@@ -245,6 +243,7 @@ def mae_vit_huge_patch14_dec512d8b(**kwargs):
     return model
 
 #fixme: I change decoder to a smaller one
+#"the decoder can be narrower and shallower"
 def deit_tiny(**kwargs):
     model = MaskedAutoencoderViT(
         img_size=32,patch_size=4, embed_dim=192, depth=12, num_heads=3,
