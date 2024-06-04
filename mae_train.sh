@@ -1,4 +1,4 @@
-CUDA_VISIBLE_DEVICES=3 python 'main_pretrain.py' \
+CUDA_VISIBLE_DEVICES=1 python 'main_pretrain.py' \
     --batch_size 256 \
     --model deit_tiny \
     --norm_pix_loss \
@@ -7,5 +7,5 @@ CUDA_VISIBLE_DEVICES=3 python 'main_pretrain.py' \
     --epochs 200 \
     --blr 5e-4 --weight_decay 0.05 \
     --data_path './data' \
-    --output_dir "./output_dir/mae0.3" \
-    --log_dir "./output_dir/mae0.3"
+    --output_dir "./output_dir/mae" \
+    --log_dir "./output_dir/mae"

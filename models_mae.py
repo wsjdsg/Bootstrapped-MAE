@@ -246,7 +246,7 @@ def mae_vit_huge_patch14_dec512d8b(**kwargs):
 #fixme: I change decoder to a smaller one
 #"the decoder can be narrower and shallower"
 def deit_tiny(**kwargs):
-    model = MaskedAutoencoderViT(
+    model = MaskedAutoencoderViT( #TODO heads
         img_size=32,patch_size=4, embed_dim=192, depth=12, num_heads=3,
         decoder_embed_dim=192, decoder_depth=8, decoder_num_heads=8,
         mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-12), **kwargs)

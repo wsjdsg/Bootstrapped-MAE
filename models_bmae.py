@@ -40,7 +40,7 @@ class BootstrappedMaskedAutoencoderViT(MaskedAutoencoderViT):
             self.now_epoch = 0
         
     
-    def ema_register(self):
+    def ema_register(self): #shadow_model in ema
         self.shadow['patch_embed'] = copy.deepcopy(self.patch_embed).cuda()
         self.shadow['cls_token'] = copy.deepcopy(self.cls_token).cuda()
         self.shadow['pos_embed'] = copy.deepcopy(self.pos_embed).cuda()
@@ -125,9 +125,9 @@ class BootstrappedMaskedAutoencoderViT(MaskedAutoencoderViT):
             pred = self.bmae_decoder_forward(latent,ids_restore)
             shadow_encoder_out = self.bmae_shadow_encoder_forward(imgs)
             loss = self.bmae_encoder_forward_loss(shadow_encoder_out[:,1:,:],pred,mask)
-            print('use bmae loss')
             return loss, pred, mask
         else:
+            # reconstruct normalized pixel
             return super(BootstrappedMaskedAutoencoderViT,self).forward(imgs,mask_ratio)
 
     def update_shadow(self): #BMAE_K
@@ -141,6 +141,6 @@ class BootstrappedMaskedAutoencoderViT(MaskedAutoencoderViT):
 def deit_tiny(**kwargs):
     model = BootstrappedMaskedAutoencoderViT(
         img_size=32,patch_size=4, embed_dim=192, depth=12, num_heads=3,
-        decoder_embed_dim=192, decoder_depth=8, decoder_num_heads=8,
+        decoder_embed_dim=192, decoder_depth=8, decoder_num_heads=3,
         mlp_ratio=4, norm_layer=partial(nn.LayerNorm, eps=1e-12), **kwargs)
     return model

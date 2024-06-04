@@ -1,4 +1,4 @@
-CUDA_VISIBLE_DEVICES=0 python main_linprobe.py \
+CUDA_VISIBLE_DEVICES=2 python main_linprobe.py \
     --batch_size 256 \
     --epochs 100 \
     --model deit_tiny \
@@ -7,6 +7,6 @@ CUDA_VISIBLE_DEVICES=0 python main_linprobe.py \
     --weight_decay 0.0 \
     --dist_eval \
     --data_path './data' \
-    --output_dir "./output_dir/mae_mk$1/linear" \
-    --log_dir "./output_dir/mae_mk$1/linear" \
-    --finetune "./output_dir/mae_mk$1/checkpoint-199.pth"
+    --output_dir "./output_dir/mae/linear" \
+    --log_dir "./output_dir/mae/linear" \
+    --finetune "./output_dir/mae/checkpoint-199.pth"

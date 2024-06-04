@@ -9,6 +9,6 @@ CUDA_VISIBLE_DEVICES=1 python main_finetune.py \
     --weight_decay 0.05 --drop_path 0.1 --reprob 0.25 --mixup 0.8 --cutmix 1.0 \
     --dist_eval \
     --data_path './data' \
-    --output_dir "./output_dir/mae$rt/finetune" \
-    --log_dir "./output_dir/mae$rt/finetune" \
-    --finetune "./output_dir/mae$rt/checkpoint-199.pth"
+    --output_dir "./output_dir/mae/finetune" \
+    --log_dir "./output_dir/mae/finetune" \
+    --finetune "./output_dir/mae/checkpoint-199.pth"
