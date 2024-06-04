@@ -11,7 +11,7 @@ CUDA_VISIBLE_DEVICES=3 python 'main_pretrain.py' \
     --output_dir "./output_dir/bmae_warmup$1" \
     --log_dir "./output_dir/bmae_warmup$1" \
     --enable_bootstrap \
-    --bmae_k $1 \
+    --bmae_k 1 \
     --enable_ema \
     --ema_alpha=0.999 \
     --ema_warmup_epochs=$1
