@@ -76,8 +76,9 @@ class BootstrappedMaskedAutoencoderViT(MaskedAutoencoderViT):
         for blk in self.decoder_blocks:
             x = blk(x)
         x = self.decoder_norm(x)
-        #simply replace the last linear layer
-        x = self.decoder_last_proj(x)
+        # simply replace the last linear layer or w/o linear proj
+        # experiment results suggest w/o linear proj is better
+        # x = self.decoder_last_proj(x)
 
         x = x[:, 1:, :]
         return x        

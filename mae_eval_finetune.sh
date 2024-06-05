@@ -1,6 +1,4 @@
-#TODO blr
-rt=0.3
-CUDA_VISIBLE_DEVICES=1 python main_finetune.py \
+python main_finetune.py \
     --batch_size 256 \
     --epochs 100 \
     --model deit_tiny \

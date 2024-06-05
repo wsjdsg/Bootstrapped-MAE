@@ -1,4 +1,4 @@
-CUDA_VISIBLE_DEVICES=2 python main_linprobe.py \
+python main_linprobe.py \
     --batch_size 256 \
     --epochs 100 \
     --model deit_tiny \
